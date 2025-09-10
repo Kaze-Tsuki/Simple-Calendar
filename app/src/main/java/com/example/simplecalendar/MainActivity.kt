@@ -160,8 +160,6 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
     val taskIOState by calendarViewModel.inputTaskState.collectAsState()
     var showDateSelector by remember { mutableStateOf(false) }
 
-    calendarViewModel.settingUpTask()
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,

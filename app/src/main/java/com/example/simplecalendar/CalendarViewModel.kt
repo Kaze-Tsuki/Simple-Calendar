@@ -109,11 +109,6 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
     }
 
     // Functions for taskInput states
-    fun settingUpTask() {
-        _taskInputState.update { it.copy(
-            startDate = calendarState.value.selectedDate,
-            endDate = calendarState.value.selectedDate) }
-    }
     fun setStartDate(date: LocalDate) {
         _taskInputState.update { it.copy(startDate = date) }
     }
@@ -131,7 +126,7 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
     }
     fun submitTask(): Boolean {
         val input = _taskInputState.value
-
+        Log.d("input check", "submitTask: $input")
         // 簡單驗證
         if (input.startDate > input.endDate || input.title.isBlank() || input.content.isBlank()) {
             Log.d("Database Op", "submitTask: Data invalid")
