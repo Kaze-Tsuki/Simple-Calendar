@@ -48,7 +48,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 
-
+// monthly calendar display
 @Composable
 fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, calendarViewModel: CalendarViewModel) {
     // 日->六
@@ -117,7 +117,7 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, c
     }
 
 }
-
+// for year and month of calendar
 @Composable
 fun NumSelect(current: Int, onChosen:(Int)->Unit, min: Int, max: Int) {
     var expanded by remember { mutableStateOf(false) }
@@ -145,7 +145,7 @@ fun NumSelect(current: Int, onChosen:(Int)->Unit, min: Int, max: Int) {
         }
     }
 }
-
+// fill the calendar with day cells
 @Composable
 fun DayCell(day: Int, onCLick: ()->Unit = {}) {
     if (day == 0) {
@@ -162,7 +162,7 @@ fun DayCell(day: Int, onCLick: ()->Unit = {}) {
         }
     }
 }
-
+// insight into day to know tasks of a day
 @Composable
 fun ViewDay(modifier: Modifier = Modifier, navController: NavController, calendarViewModel: CalendarViewModel) {
     val calendarUIState by calendarViewModel.calendarState.collectAsState()
@@ -191,7 +191,7 @@ fun ViewDay(modifier: Modifier = Modifier, navController: NavController, calenda
         }
     }
 }
-
+// in day display, using expanding card to toggle more info
 @Composable
 fun TaskDisplayCard(
     task: Task,
@@ -260,7 +260,7 @@ fun TaskDisplayCard(
         }
     }
 }
-
+// update page , similar to task input page, both will be merged
 @Composable
 fun UpdatePage(task: Task, onSubmit: (Task)->Unit, onDumped: ()->Unit) {
     var currentTask by remember { mutableStateOf(task) }
@@ -343,7 +343,7 @@ fun UpdatePage(task: Task, onSubmit: (Task)->Unit, onDumped: ()->Unit) {
         }
     }
 }
-
+// setting part is not designed yet
 @Composable
 fun Setting(modifier: Modifier = Modifier, navController: NavController) {
 

@@ -89,7 +89,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
+// main application
 @Composable
 fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
@@ -154,7 +154,7 @@ fun App(modifier: Modifier = Modifier) {
         }
     }
 }
-
+// will merged /w update task
 @Composable
 fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, modifier: Modifier = Modifier) {
     val taskIOState by calendarViewModel.inputTaskState.collectAsState()
@@ -224,7 +224,7 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
     }
 }
 
-
+// class to store info efficient and Bottom Bar
 data class BottomNavItem(val title: String, val route: String, val icon: ImageVector)
 @Composable
 fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
@@ -254,7 +254,7 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 }
-
+// date range input
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateInputDialog(onDateSelected: (Long?, Long?) -> Unit, onDismiss: ()->Unit) {
@@ -296,7 +296,7 @@ fun DateInputDialog(onDateSelected: (Long?, Long?) -> Unit, onDismiss: ()->Unit)
         )
     }
 }
-
+// color selector
 @Composable
 fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
     var expanded by remember { mutableStateOf(false) }
@@ -324,7 +324,7 @@ fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
         }
     }
 }
-
+// color selector's display component
 @Composable
 fun ColorSelectItem(name: String, color: Color, modifier: Modifier = Modifier){
     Row(
@@ -338,13 +338,5 @@ fun ColorSelectItem(name: String, color: Color, modifier: Modifier = Modifier){
                 .background(color = color)
                 .size(40.dp),
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SimpleCalendarTheme {
-        App()
     }
 }

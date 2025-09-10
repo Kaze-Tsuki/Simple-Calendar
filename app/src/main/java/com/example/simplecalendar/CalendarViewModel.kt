@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-
+// DB schema
 @Entity(tableName = "taskList")
 data class Task(
     @PrimaryKey(autoGenerate = true)
@@ -38,7 +38,7 @@ data class Task(
     val startDate: String,
     val endDate: String
 )
-
+// the interface of Task Room DB
 @Dao
 interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -66,6 +66,7 @@ data class CalendarState(
     val selectedTask: Task? = null,
 )
 
+// structure of task input but similar to Task, so it will be abandon
 data class TaskInputs(
     val startDate: LocalDate = LocalDate.now(),
     val endDate: LocalDate = LocalDate.now(),
@@ -74,6 +75,7 @@ data class TaskInputs(
     val color: Color = Color.Black
 )
 
+// Global view model(calendar and task input)
 class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
     private val _calendarState = MutableStateFlow<CalendarState>(CalendarState())
     val calendarState: StateFlow<CalendarState> = _calendarState
@@ -168,7 +170,7 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
     }
 }
 
-// AI generated code for customized factory vm generator
+// AI generated code for customized factory viewmodel generator(assigned DB into viewmodel)
 class CalendarViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(CalendarViewModel::class.java)) {
@@ -178,13 +180,13 @@ class CalendarViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
-
+// DB creator(most DB has more than one table)
 @Database(entities = [Task::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
 }
-
+// since color has unstorable type ULong, using ARGB to transform
 class Converters {
     @TypeConverter
     fun fromColor(color: Color): Int = color.toArgb() // 存成 ARGB Int
