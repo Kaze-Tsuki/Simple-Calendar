@@ -32,11 +32,11 @@ import java.time.LocalDate
 data class Task(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val title: String,
-    val content: String,
-    val color: Color,
-    val startDate: String,
-    val endDate: String
+    val title: String = "",
+    val content: String = "",
+    val color: Color = Color.Black,
+    val startDate: String = "",
+    val endDate: String = ""
 )
 // the interface of Task Room DB
 @Dao
@@ -59,28 +59,18 @@ interface TaskDao {
     fun findDay(date: String): Flow<List<Task>>
 }
 
-data class CalendarState(
+data class GlobalState(
     val selectedDate: LocalDate = LocalDate.now(),
     val displayYear: Int = LocalDate.now().year,
     val displayMonth: Int = LocalDate.now().monthValue,
     val selectedTask: Task? = null,
 )
 
-// structure of task input but similar to Task, so it will be abandon
-data class TaskInputs(
-    val startDate: LocalDate = LocalDate.now(),
-    val endDate: LocalDate = LocalDate.now(),
-    val title: String = "",
-    val content: String = "",
-    val color: Color = Color.Black
-)
-
-// Global view model(calendar and task input)
-class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
-    private val _calendarState = MutableStateFlow<CalendarState>(CalendarState())
-    val calendarState: StateFlow<CalendarState> = _calendarState
+class GlobalViewModel(private val taskDao: TaskDao): ViewModel() {
+    private val _globalState = MutableStateFlow<GlobalState>(GlobalState())
+    val globalState: StateFlow<GlobalState> = _globalState
     //state value of current browsing month data
-    val startOfMonth: LocalDate = LocalDate.of(calendarState.value.displayYear, calendarState.value.displayMonth,1)
+    val startOfMonth: LocalDate = LocalDate.of(globalState.value.displayYear, globalState.value.displayMonth,1)
     val monthTaskData: StateFlow<List<Task>> = taskDao.findMonth(
         startOfMonth.toString(),
         startOfMonth.plusMonths(1).toString()
@@ -88,21 +78,18 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
         started = SharingStarted.Lazily,
         initialValue = emptyList())
 
-    private val _taskInputState = MutableStateFlow<TaskInputs>(TaskInputs())
-    val inputTaskState: StateFlow<TaskInputs> = _taskInputState
-
     // Functions for calendar states
     fun focusDate(date: LocalDate) {
-        _calendarState.update { it.copy(selectedDate = date) }
+        _globalState.update { it.copy(selectedDate = date) }
     }
     fun focusTask(task: Task) {
-        _calendarState.update { it.copy(selectedTask = task) }
+        _globalState.update { it.copy(selectedTask = task) }
     }
     fun setYear(year: Int) {
-        _calendarState.update { it.copy(displayYear = year) }
+        _globalState.update { it.copy(displayYear = year) }
     }
     fun setMonth(month: Int) {
-        _calendarState.update { it.copy(displayMonth = month) }
+        _globalState.update { it.copy(displayMonth = month) }
     }
 
     // quick method to view date data
@@ -110,42 +97,17 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
         return taskDao.findDay(date.toString())
     }
 
-    // Functions for taskInput states
-    fun setStartDate(date: LocalDate) {
-        _taskInputState.update { it.copy(startDate = date) }
-    }
-    fun setEndDate(date: LocalDate) {
-        _taskInputState.update { it.copy(endDate = date) }
-    }
-    fun setTitle(title: String) {
-        _taskInputState.update { it.copy(title = title) }
-    }
-    fun setContent(content: String) {
-        _taskInputState.update { it.copy(content = content) }
-    }
-    fun setColor(color: Color) {
-        _taskInputState.update { it.copy(color = color) }
-    }
-    fun submitTask(): Boolean {
-        val input = _taskInputState.value
-        Log.d("input check", "submitTask: $input")
+    fun submitTask(task: Task): Boolean {
+        Log.d("input check", "submitTask: $task")
         // 簡單驗證
-        if (input.startDate > input.endDate || input.title.isBlank() || input.content.isBlank()) {
+        if (task.startDate > task.endDate || task.title.isBlank() || task.content.isBlank()) {
             Log.d("Database Op", "submitTask: Data invalid")
             return false
         }
 
         Log.d("Database Op", "submitTask: Data valid")
         viewModelScope.launch(Dispatchers.IO) {
-            taskDao.insert(
-                Task(
-                    title = input.title,
-                    content = input.content,
-                    color = input.color,
-                    startDate = input.startDate.toString(),
-                    endDate = input.endDate.toString()
-                )
-            )
+            taskDao.insert(task)
         }
         return true
     }
@@ -170,22 +132,49 @@ class CalendarViewModel(private val taskDao: TaskDao): ViewModel() {
     }
 }
 
+class TaskInputVM: ViewModel() {
+    private val _taskInputState = MutableStateFlow<Task>(Task())
+    val inputTaskState: StateFlow<Task> = _taskInputState
+
+    // Functions for taskInput states
+    fun setup(task: Task) {
+        _taskInputState.update{ task }
+    }
+    fun setStartDate(date: LocalDate) {
+        _taskInputState.update { it.copy(startDate = date.toString()) }
+    }
+    fun setEndDate(date: LocalDate) {
+        _taskInputState.update { it.copy(endDate = date.toString()) }
+    }
+    fun setTitle(title: String) {
+        _taskInputState.update { it.copy(title = title) }
+    }
+    fun setContent(content: String) {
+        _taskInputState.update { it.copy(content = content) }
+    }
+    fun setColor(color: Color) {
+        _taskInputState.update { it.copy(color = color) }
+    }
+}
+
 // AI generated code for customized factory viewmodel generator(assigned DB into viewmodel)
-class CalendarViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider.Factory {
+class GlobalViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(CalendarViewModel::class.java)) {
+        if (modelClass.isAssignableFrom(GlobalViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return CalendarViewModel(taskDao) as T
+            return GlobalViewModel(taskDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+
 // DB creator(most DB has more than one table)
 @Database(entities = [Task::class], version = 1)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
 }
+
 // since color has unstorable type ULong, using ARGB to transform
 class Converters {
     @TypeConverter

@@ -1,12 +1,11 @@
 package com.example.simplecalendar
 
-import android.graphics.drawable.shapes.Shape
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,18 +17,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Button
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.Icon
-import androidx.compose.material.Shapes
-import androidx.compose.material.TextButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DropdownMenuItem
@@ -39,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,23 +47,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
 import com.example.simplecalendar.ui.theme.SimpleCalendarTheme
-import kotlinx.coroutines.flow.StateFlow
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import kotlin.math.log
 
 val colorMap = mapOf<Color, String>(
     Color.Black to "Black",
@@ -101,12 +95,11 @@ fun App(modifier: Modifier = Modifier) {
     ).build()
     val taskDao = db.taskDao()
 
-    val calendarViewModel: CalendarViewModel = viewModel(
-        factory = CalendarViewModelFactory(taskDao)
+    val globalViewModel: GlobalViewModel = viewModel(
+        factory = GlobalViewModelFactory(taskDao)
     )
 
-
-    val calendarUIState by calendarViewModel.calendarState.collectAsState()
+    val globalUIState by globalViewModel.globalState.collectAsState()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -120,35 +113,27 @@ fun App(modifier: Modifier = Modifier) {
             composable("main") {
                 CalendarMonth(
                     navController = navController,
-                    calendarViewModel = calendarViewModel
+                    GlobalViewModel = globalViewModel
                 )
             }
 
-            composable("addTask") {
-                AddTask(
+            composable("taskInputPage/{isUpdate}") {navBackStackEntry ->
+                val isUpdate = navBackStackEntry.arguments?.getString("isUpdate").toBoolean()
+                TaskInputPage(
                     navController = navController,
-                    calendarViewModel
+                    globalViewModel,
+                    isUpdate = isUpdate
                 )
             }
             composable("viewDay") {
                 ViewDay(
                     navController = navController,
-                    calendarViewModel = calendarViewModel
+                    GlobalViewModel = globalViewModel
                 )
             }
             composable("setting") {
                 Setting(
                     navController = navController,
-
-                )
-            }
-            composable("updateTask") {
-                UpdatePage(
-                    task = calendarUIState.selectedTask!!,
-                    onDumped = {navController.popBackStack()},
-                    onSubmit = {
-                        calendarViewModel.updateTask(it)
-                    }
                 )
             }
         }
@@ -156,9 +141,14 @@ fun App(modifier: Modifier = Modifier) {
 }
 // will merged /w update task
 @Composable
-fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, modifier: Modifier = Modifier) {
-    val taskIOState by calendarViewModel.inputTaskState.collectAsState()
+fun TaskInputPage(navController: NavController, globalViewModel: GlobalViewModel, taskInputVM: TaskInputVM = viewModel(), isUpdate: Boolean, modifier: Modifier = Modifier) {
+    val taskIOState by taskInputVM.inputTaskState.collectAsState()
     var showDateSelector by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if(isUpdate) taskInputVM.setup(globalViewModel.globalState.value.selectedTask?: Task())
+        Log.d("Type check", "TaskInputPage: isUpdate=$isUpdate, task=$taskIOState")
+    }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,7 +157,7 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
     ) {
         TextField(
             onValueChange = {
-                calendarViewModel.setTitle(it)
+                taskInputVM.setTitle(it)
             },
             value = taskIOState.title,
             maxLines = 1,
@@ -178,7 +168,7 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
         Spacer(Modifier.height(30.dp))
         TextField(
             onValueChange = {
-                calendarViewModel.setContent(it)
+                taskInputVM.setContent(it)
             },
             value = taskIOState.content,
             maxLines = 1,
@@ -196,8 +186,8 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
                     val endDate = end?.let {millis ->
                         Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
                     }
-                    calendarViewModel.setStartDate(startDate?: LocalDate.now())
-                    calendarViewModel.setEndDate(endDate?: LocalDate.now())
+                    taskInputVM.setStartDate(startDate?: LocalDate.now())
+                    taskInputVM.setEndDate(endDate?: LocalDate.now())
                 }
             )
         Button(
@@ -211,12 +201,15 @@ fun AddTask(navController: NavController, calendarViewModel: CalendarViewModel, 
         }
         ColorSelect(
             onChosen = { it->
-                calendarViewModel.setColor(it)
+                taskInputVM.setColor(it)
             },
             taskIOState.color
         )
         Button(
-            onClick = {calendarViewModel.submitTask()},
+            onClick = {
+                if (isUpdate) globalViewModel.updateTask(taskIOState)
+                else globalViewModel.submitTask(taskIOState)
+            },
             content = {
                 Text("Submit")
             }
@@ -230,24 +223,20 @@ data class BottomNavItem(val title: String, val route: String, val icon: ImageVe
 fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
     val bottomBarItems = listOf(
         BottomNavItem("首頁", "main", Icons.Default.Home),
-        BottomNavItem("任務", "addTask", Icons.Default.Add),
+        BottomNavItem("任務", "taskInputPage/false", Icons.Default.Add),
         BottomNavItem("設定", "setting", Icons.Default.Settings),
     )
-    BottomNavigation {
+    NavigationBar {
         val navBackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackEntry?.destination?.route
         bottomBarItems.forEach { item->
-            BottomNavigationItem(
+            NavigationBarItem(
                 icon = { Icon(item.icon, contentDescription = item.title) },
                 selected = currentRoute == item.route,
                 label = { Text(item.title) },
                 onClick = {
                     navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )
@@ -306,7 +295,9 @@ fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
     ) {
         Button(
             onClick = {expanded = true},
-            content = { ColorSelectItem(colorMap[color]!!, color, Modifier.height(50.dp).fillMaxWidth()) }
+            content = { ColorSelectItem(colorMap[color]!!, color, Modifier
+                .height(50.dp)
+                .fillMaxWidth()) }
         )
         DropdownMenu(
             expanded = expanded,
@@ -314,7 +305,9 @@ fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
         ) {
             colorMap.toList().forEach { it->
                 DropdownMenuItem(
-                    text = { ColorSelectItem(it.second, it.first, Modifier.height(50.dp).width(150.dp)) },
+                    text = { ColorSelectItem(it.second, it.first, Modifier
+                        .height(50.dp)
+                        .width(150.dp)) },
                     onClick = {
                         onChosen(it.first)
                         expanded = false
@@ -334,7 +327,8 @@ fun ColorSelectItem(name: String, color: Color, modifier: Modifier = Modifier){
     ) {
         Text(name, Modifier.weight(1f))
         Box(
-            modifier = Modifier.padding(5.dp)
+            modifier = Modifier
+                .padding(5.dp)
                 .background(color = color)
                 .size(40.dp),
         )

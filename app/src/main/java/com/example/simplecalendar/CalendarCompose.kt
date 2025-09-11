@@ -1,6 +1,5 @@
 package com.example.simplecalendar
 
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,8 +20,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.DropdownMenu
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,9 +49,9 @@ import java.time.ZoneId
 
 // monthly calendar display
 @Composable
-fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, calendarViewModel: CalendarViewModel) {
+fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, GlobalViewModel: GlobalViewModel) {
     // 日->六
-    val calendarUIState by calendarViewModel.calendarState.collectAsState()
+    val calendarUIState by GlobalViewModel.globalState.collectAsState()
     val year = calendarUIState.displayYear
     val month = calendarUIState.displayMonth
     val firstDayOfWeek: Int = LocalDate.of(year,month,1).dayOfWeek.value % 7 //with sunday=0
@@ -70,13 +69,13 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, c
         ) {
             NumSelect(
                 current = year,
-                onChosen = { calendarViewModel.setYear(it) },
+                onChosen = { GlobalViewModel.setYear(it) },
                 min = year - 5,
                 max = year + 5
             )
             NumSelect(
                 current = month,
-                onChosen = { calendarViewModel.setMonth(it) },
+                onChosen = { GlobalViewModel.setMonth(it) },
                 min = 1,
                 max = 12
             )
@@ -103,13 +102,9 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, c
             // 日期格子
             items(dayInMonth) { day ->
                 DayCell(day) {
-                    calendarViewModel.focusDate(LocalDate.of(year, month, day))
+                    GlobalViewModel.focusDate(LocalDate.of(year, month, day))
                     navController.navigate("viewDay") {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 }
             }
@@ -164,9 +159,9 @@ fun DayCell(day: Int, onCLick: ()->Unit = {}) {
 }
 // insight into day to know tasks of a day
 @Composable
-fun ViewDay(modifier: Modifier = Modifier, navController: NavController, calendarViewModel: CalendarViewModel) {
-    val calendarUIState by calendarViewModel.calendarState.collectAsState()
-    val tasks by calendarViewModel
+fun ViewDay(modifier: Modifier = Modifier, navController: NavController, GlobalViewModel: GlobalViewModel) {
+    val calendarUIState by GlobalViewModel.globalState.collectAsState()
+    val tasks by GlobalViewModel
         .accessDate(calendarUIState.selectedDate)
         .collectAsState(emptyList())
     LazyColumn {
@@ -177,16 +172,12 @@ fun ViewDay(modifier: Modifier = Modifier, navController: NavController, calenda
             TaskDisplayCard(
                 it,
                 {updatedTask->
-                    calendarViewModel.focusTask(updatedTask)
-                    navController.navigate("updateTask") {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
+                    GlobalViewModel.focusTask(updatedTask)
+                    navController.navigate("taskInputPage/true") {
                         launchSingleTop = true
-                        restoreState = true
                     }
                 },
-                {calendarViewModel.deleteTask(it)},
+                {GlobalViewModel.deleteTask(it)},
             )
         }
     }
@@ -260,89 +251,7 @@ fun TaskDisplayCard(
         }
     }
 }
-// update page , similar to task input page, both will be merged
-@Composable
-fun UpdatePage(task: Task, onSubmit: (Task)->Unit, onDumped: ()->Unit) {
-    var currentTask by remember { mutableStateOf(task) }
-    var showDateSelector by remember { mutableStateOf(false) }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        TextField(
-            onValueChange = {
-                currentTask = currentTask.copy(title = it)
-            },
-            value = currentTask.title,
-            maxLines = 1,
-            label = { Text("Title") },
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-        Spacer(Modifier.height(30.dp))
-        TextField(
-            onValueChange = {
-                currentTask = currentTask.copy(content = it)
-            },
-            value = currentTask.content,
-            maxLines = 1,
-            label = { Text("Content") },
-            modifier = Modifier
-                .fillMaxWidth()
-        )
-        if(showDateSelector)
-            DateInputDialog(
-                onDismiss = {showDateSelector = false},
-                onDateSelected = {start, end->
-                    val startDate = start?.let {millis ->
-                        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                    }
-                    val endDate = end?.let {millis ->
-                        Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate()
-                    }
-                    currentTask = currentTask.copy(startDate = (startDate?: LocalDate.now()).toString())
-                    currentTask = currentTask.copy(endDate = (endDate?: LocalDate.now()).toString())
-                }
-            )
-        Button(
-            onClick = {showDateSelector = true},
-            content = {Text("Select Date")}
-        )
-        Row {
-            Text("Start: ${currentTask.startDate}")
-            Spacer(Modifier.width(50.dp))
-            Text("End: ${currentTask.endDate}")
-        }
-        ColorSelect(
-            onChosen = {
-                currentTask = currentTask.copy(color = it)
-            },
-            currentTask.color
-        )
-        Row {
-            Button(
-                onClick = {
-                    onDumped()
-                },
-                content = {
-                    Text("Dump")
-                }
-            )
-            Spacer(modifier = Modifier.width(40.dp))
-            Button(
-                onClick = {
-                    onSubmit(currentTask)
-                    onDumped()
-                },
-                content = {
-                    Text("Submit")
-                }
-            )
-        }
-    }
-}
 // setting part is not designed yet
 @Composable
 fun Setting(modifier: Modifier = Modifier, navController: NavController) {
