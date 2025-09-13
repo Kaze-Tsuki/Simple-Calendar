@@ -1,8 +1,11 @@
 package com.example.simplecalendar.settingpage
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -12,13 +15,16 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.simplecalendar.calendarpage.SettingDirectionItem
 
 // setting part is not designed yet
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +36,7 @@ fun Setting(modifier: Modifier = Modifier, navController: NavController) {
             TopAppBar(
                 title = { Text("設定") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { childNavController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -46,7 +52,7 @@ fun Setting(modifier: Modifier = Modifier, navController: NavController) {
                 SettingMain(childNavController)
             }
             composable("setting/color") {
-
+                ColorSetting(childNavController)
             }
         }
     }
@@ -54,27 +60,35 @@ fun Setting(modifier: Modifier = Modifier, navController: NavController) {
 
 @Composable
 fun SettingMain(navController: NavController) {
-    LazyColumn {
+    Spacer(Modifier.height(15.dp))
+    LazyColumn(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         item {
             SettingDirectionItem("Colors", "Set your preferred colors") {
-                navController.navigate("setting/color") {
-                    launchSingleTop = true
-                }
+                navController.navigate("setting/color") { launchSingleTop = true }
             }
+        }
+        items(allToggleSettings) { item->
+            ToggleSetting(item.title,item.content, item.settingKeyName)
         }
     }
 }
 
-data class SettingRoute(
-    val currentRoute: String,
-    val entry: String,
-    val title: String,
-    val description: String
+data class ToggleSettingData(val title: String, val content: String, val settingKeyName: Preferences.Key<Boolean>)
+
+val allToggleSettings = listOf(
+    ToggleSettingData("Double Tap", "Double tap on date to take insights",
+        SettingsKeys.DOUBLETAP_TO_VIEW),
+    ToggleSettingData("Auto Delete", "Auto delete expired tasks",
+        SettingsKeys.AUTO_DELETE),
 )
 
 @Preview
 @Composable
 fun SettingMainPreview() {
     val navController = rememberNavController() // fake NavController
+    DataStoreManager.dataStore = LocalContext.current.dataStore
     SettingMain(navController)
 }

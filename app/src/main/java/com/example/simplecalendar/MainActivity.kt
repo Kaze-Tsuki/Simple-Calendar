@@ -34,7 +34,9 @@ import androidx.navigation.navigation
 import androidx.room.Room
 import com.example.simplecalendar.calendarpage.CalendarMonth
 import com.example.simplecalendar.calendarpage.ViewDay
+import com.example.simplecalendar.settingpage.DataStoreManager
 import com.example.simplecalendar.settingpage.Setting
+import com.example.simplecalendar.settingpage.dataStore
 import com.example.simplecalendar.taskinput.TaskInputPage
 import com.example.simplecalendar.ui.theme.SimpleCalendarTheme
 
@@ -66,6 +68,7 @@ sealed class Screens(val route: String) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DataStoreManager.dataStore = this.dataStore
         enableEdgeToEdge()
         setContent {
             SimpleCalendarTheme {
@@ -78,14 +81,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-//    navController.addOnDestinationChangedListener { controller, _, _ ->
-//        val routes = controller
-//            .currentBackStack.value
-//            .map { it.destination.route }
-//            .joinToString(", ")
-//
-//        Log.d("BackStackLog", "BackStack: $routes")
-//    }
+
 
     val context = LocalContext.current
     val db = Room.databaseBuilder(
