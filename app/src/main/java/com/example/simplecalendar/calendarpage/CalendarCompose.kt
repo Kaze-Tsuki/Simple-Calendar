@@ -1,4 +1,4 @@
-package com.example.simplecalendar
+package com.example.simplecalendar.calendarpage
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Card
@@ -27,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,24 +36,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import java.time.Instant
+import com.example.simplecalendar.AlertDialog
+import com.example.simplecalendar.GlobalViewModel
+import com.example.simplecalendar.Task
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.ZoneId
 
 // monthly calendar display
 @Composable
-fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, GlobalViewModel: GlobalViewModel) {
+fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, globalViewModel: GlobalViewModel) {
     // 日->六
-    val calendarUIState by GlobalViewModel.globalState.collectAsState()
-    val year = calendarUIState.displayYear
-    val month = calendarUIState.displayMonth
+    val globalUIState by globalViewModel.globalState.collectAsState()
+    val year = globalUIState.displayYear
+    val month = globalUIState.displayMonth
     val firstDayOfWeek: Int = LocalDate.of(year,month,1).dayOfWeek.value % 7 //with sunday=0
     val dayInMonth: Int = YearMonth.of(year,month).lengthOfMonth()
 
@@ -69,13 +70,13 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, G
         ) {
             NumSelect(
                 current = year,
-                onChosen = { GlobalViewModel.setYear(it) },
+                onChosen = { globalViewModel.setYear(it) },
                 min = year - 5,
                 max = year + 5
             )
             NumSelect(
                 current = month,
-                onChosen = { GlobalViewModel.setMonth(it) },
+                onChosen = { globalViewModel.setMonth(it) },
                 min = 1,
                 max = 12
             )
@@ -97,15 +98,16 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, G
             }
             // 空白格子
             items(firstDayOfWeek) {
-                DayCell(0)
+                DayCell(0, false)
             }
             // 日期格子
             items(dayInMonth) { day ->
-                DayCell(day) {
-                    GlobalViewModel.focusDate(LocalDate.of(year, month, day))
-                    navController.navigate("viewDay") {
-                        launchSingleTop = true
-                    }
+                val isSelect = globalUIState.selectedDate == LocalDate.of(year, month, day+1)
+                DayCell(day+1, isSelect) {
+                    if (isSelect)
+                        navController.navigate("viewDay")
+                    else
+                        globalViewModel.focusDate(LocalDate.of(year, month, day+1))
                 }
             }
         }
@@ -142,15 +144,17 @@ fun NumSelect(current: Int, onChosen:(Int)->Unit, min: Int, max: Int) {
 }
 // fill the calendar with day cells
 @Composable
-fun DayCell(day: Int, onCLick: ()->Unit = {}) {
+fun DayCell(day: Int, selected: Boolean, onCLick: ()->Unit = {}) {
     if (day == 0) {
-        Box(modifier = Modifier.size(48.dp))
+        Box(modifier = Modifier.size(48.dp, 60.dp))
     }
     else {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clickable { onCLick() },
+                .size(48.dp, 60.dp)
+                .clickable { onCLick() }
+                .background(if (selected) Color.LightGray else Color.Unspecified)
+            ,
             contentAlignment = Alignment.Center
         ) {
             Text("$day")
@@ -159,9 +163,9 @@ fun DayCell(day: Int, onCLick: ()->Unit = {}) {
 }
 // insight into day to know tasks of a day
 @Composable
-fun ViewDay(modifier: Modifier = Modifier, navController: NavController, GlobalViewModel: GlobalViewModel) {
-    val calendarUIState by GlobalViewModel.globalState.collectAsState()
-    val tasks by GlobalViewModel
+fun ViewDay(modifier: Modifier = Modifier, navController: NavController, globalViewModel: GlobalViewModel) {
+    val calendarUIState by globalViewModel.globalState.collectAsState()
+    val tasks by globalViewModel
         .accessDate(calendarUIState.selectedDate)
         .collectAsState(emptyList())
     LazyColumn {
@@ -169,16 +173,28 @@ fun ViewDay(modifier: Modifier = Modifier, navController: NavController, GlobalV
             Text("${calendarUIState.selectedDate}")
         }
         items(tasks) { it
+            var deleteConfirm by remember { mutableStateOf(false) }
             TaskDisplayCard(
                 it,
                 {updatedTask->
-                    GlobalViewModel.focusTask(updatedTask)
+                    globalViewModel.focusTask(updatedTask)
                     navController.navigate("taskInputPage/true") {
                         launchSingleTop = true
                     }
                 },
-                {GlobalViewModel.deleteTask(it)},
+                {deleteConfirm = true},
             )
+            if(deleteConfirm) {
+                AlertDialog(
+                    {deleteConfirm = false},
+                    {
+                        globalViewModel.deleteTask(it)
+                        deleteConfirm = false
+                    },
+                    "Delete Task?",
+                    "Title: ${it.title}, \ncontent: ${it.content}"
+                )
+            }
         }
     }
 }
@@ -250,10 +266,4 @@ fun TaskDisplayCard(
             }
         }
     }
-}
-
-// setting part is not designed yet
-@Composable
-fun Setting(modifier: Modifier = Modifier, navController: NavController) {
-
 }

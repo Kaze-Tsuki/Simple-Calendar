@@ -100,7 +100,7 @@ class GlobalViewModel(private val taskDao: TaskDao): ViewModel() {
     fun submitTask(task: Task): Boolean {
         Log.d("input check", "submitTask: $task")
         // 簡單驗證
-        if (task.startDate > task.endDate || task.title.isBlank() || task.content.isBlank()) {
+        if (task.startDate > task.endDate || task.startDate == "" || task.title.isBlank() || task.content.isBlank()) {
             Log.d("Database Op", "submitTask: Data invalid")
             return false
         }
@@ -132,30 +132,6 @@ class GlobalViewModel(private val taskDao: TaskDao): ViewModel() {
     }
 }
 
-class TaskInputVM: ViewModel() {
-    private val _taskInputState = MutableStateFlow<Task>(Task())
-    val inputTaskState: StateFlow<Task> = _taskInputState
-
-    // Functions for taskInput states
-    fun setup(task: Task) {
-        _taskInputState.update{ task }
-    }
-    fun setStartDate(date: LocalDate) {
-        _taskInputState.update { it.copy(startDate = date.toString()) }
-    }
-    fun setEndDate(date: LocalDate) {
-        _taskInputState.update { it.copy(endDate = date.toString()) }
-    }
-    fun setTitle(title: String) {
-        _taskInputState.update { it.copy(title = title) }
-    }
-    fun setContent(content: String) {
-        _taskInputState.update { it.copy(content = content) }
-    }
-    fun setColor(color: Color) {
-        _taskInputState.update { it.copy(color = color) }
-    }
-}
 
 // AI generated code for customized factory viewmodel generator(assigned DB into viewmodel)
 class GlobalViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider.Factory {
@@ -169,7 +145,7 @@ class GlobalViewModelFactory(private val taskDao: TaskDao) : ViewModelProvider.F
 }
 
 // DB creator(most DB has more than one table)
-@Database(entities = [Task::class], version = 1)
+@Database(entities = [Task::class], version = 1, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun taskDao(): TaskDao
