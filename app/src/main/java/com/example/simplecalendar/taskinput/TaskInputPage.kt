@@ -36,11 +36,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.simplecalendar.AlertDialog
 import com.example.simplecalendar.GlobalViewModel
-import com.example.simplecalendar.Screens
 import com.example.simplecalendar.Task
-import com.example.simplecalendar.colorMap
+import com.example.simplecalendar.settingpage.DataStoreManager
+import com.example.simplecalendar.settingpage.SettingData
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -51,11 +50,14 @@ fun TaskInputPage(navController: NavController, globalViewModel: GlobalViewModel
     val globalUiState by globalViewModel.globalState.collectAsState()
     var showDateSelector by remember { mutableStateOf(false) }
     var finishNotify by remember { mutableStateOf(false) }
+    val colorKey = SettingData.colorMap.value.keys.firstOrNull() ?: Color.Black
 
     LaunchedEffect(Unit) {
         if(isUpdate) taskInputVM.setup(globalViewModel.globalState.value.selectedTask?:
-        Task(startDate = globalUiState.selectedDate.toString(), endDate = globalUiState.selectedDate.toString()))
-        else taskInputVM.setup(Task(startDate = globalUiState.selectedDate.toString(), endDate = globalUiState.selectedDate.toString()))
+        Task(startDate = globalUiState.selectedDate.toString()
+            , endDate = globalUiState.selectedDate.toString(), color = colorKey))
+        else taskInputVM.setup(Task(startDate = globalUiState.selectedDate.toString(), endDate = globalUiState.selectedDate.toString()
+            , color = colorKey))
         Log.d("Type check", "TaskInputPage: isUpdate=$isUpdate, task=$taskIOState")
     }
 
@@ -129,7 +131,7 @@ fun TaskInputPage(navController: NavController, globalViewModel: GlobalViewModel
         if(isUpdate)
             navController.popBackStack()
         else
-            taskInputVM.setup(Task(startDate = globalUiState.selectedDate.toString(), endDate = globalUiState.selectedDate.toString()))
+            taskInputVM.setup(Task(startDate = globalUiState.selectedDate.toString(), endDate = globalUiState.selectedDate.toString(), color = colorKey))
     }
 }
 
@@ -179,13 +181,14 @@ fun DateInputDialog(onDateSelected: (Long?, Long?) -> Unit, onDismiss: ()->Unit)
 @Composable
 fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
     var expanded by remember { mutableStateOf(false) }
+    val colorMap by SettingData.colorMap.collectAsState()
     Box(
         modifier = Modifier
             .padding(8.dp)
     ) {
         Button(
             onClick = {expanded = true},
-            content = { ColorSelectItem(colorMap[color]!!, color, Modifier
+            content = { ColorSelectItem(colorMap[color]?:"", color, Modifier
                 .height(50.dp)
                 .fillMaxWidth()) }
         )
@@ -193,6 +196,7 @@ fun ColorSelect(onChosen: (Color)->Unit, color: Color) {
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
+            // TODO: Check if change to color map affect this
             colorMap.toList().forEach { it->
                 DropdownMenuItem(
                     text = { ColorSelectItem(it.second, it.first, Modifier

@@ -45,6 +45,8 @@ import androidx.navigation.NavController
 import com.example.simplecalendar.AlertDialog
 import com.example.simplecalendar.GlobalViewModel
 import com.example.simplecalendar.Task
+import com.example.simplecalendar.settingpage.DataStoreManager
+import com.example.simplecalendar.settingpage.SettingData
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -53,6 +55,7 @@ import java.time.YearMonth
 fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, globalViewModel: GlobalViewModel) {
     // 日->六
     val globalUIState by globalViewModel.globalState.collectAsState()
+    val enableDoubleTap by SettingData.doubleTap.collectAsState()
     val year = globalUIState.displayYear
     val month = globalUIState.displayMonth
     val firstDayOfWeek: Int = LocalDate.of(year,month,1).dayOfWeek.value % 7 //with sunday=0
@@ -104,7 +107,7 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, g
             items(dayInMonth) { day ->
                 val isSelect = globalUIState.selectedDate == LocalDate.of(year, month, day+1)
                 DayCell(day+1, isSelect) {
-                    if (isSelect)
+                    if (isSelect || !enableDoubleTap)
                         navController.navigate("viewDay")
                     else
                         globalViewModel.focusDate(LocalDate.of(year, month, day+1))

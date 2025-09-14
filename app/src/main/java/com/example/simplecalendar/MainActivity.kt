@@ -1,7 +1,6 @@
 package com.example.simplecalendar
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,12 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -40,16 +37,6 @@ import com.example.simplecalendar.settingpage.dataStore
 import com.example.simplecalendar.taskinput.TaskInputPage
 import com.example.simplecalendar.ui.theme.SimpleCalendarTheme
 
-val colorMap = mapOf<Color, String>(
-    Color.Black to "Black",
-    Color.Blue to "Blue",
-    Color.Magenta to "Magenta",
-    Color.Green to "Green",
-    Color.Gray to "Gray",
-    Color.White to "White",
-    Color.Red to "Red",
-    Color.Yellow to "Yellow"
-)
 
 sealed class Screens(val route: String) {
     object Main: Screens("main") {
@@ -81,8 +68,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun App(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-
-
     val context = LocalContext.current
     val db = Room.databaseBuilder(
         context,

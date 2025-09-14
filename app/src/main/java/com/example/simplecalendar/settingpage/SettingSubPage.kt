@@ -41,14 +41,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.navigation.NavController
-import com.example.simplecalendar.colorMap
 import com.example.simplecalendar.settingpage.DataStoreManager.readColorMap
 import kotlinx.coroutines.launch
 
 @Composable
 fun ColorSetting(navController: NavController) {
     // load
-    val colorMap by readColorMap().collectAsState(colorMap)
+    val colorMap by SettingData.colorMap.collectAsState()
     LazyColumn(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.fillMaxWidth()
@@ -173,7 +172,7 @@ suspend fun checkAndStore(
     val newMap = colorMap.toMutableMap()
     newMap[colorInt] = name
     Log.d("Save Color", "checkAndStore: $colorInt and $name")
-    DataStoreManager.saveColorMap(newMap)
+    SettingData.setColorMap(newMap)
     return true
 }
 
