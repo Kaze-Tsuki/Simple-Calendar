@@ -18,6 +18,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
+import com.example.simplecalendar.settingpage.SettingData
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +48,9 @@ interface TaskDao {
 
     @Delete
     fun delete(task: Task)
+
+    @Query("Delete From taskList Where endDate < :date")
+    fun deleteExpired(date: String)
 
     @Update
     fun update(task: Task)

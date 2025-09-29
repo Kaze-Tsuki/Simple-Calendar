@@ -44,12 +44,12 @@ object SettingData{
     init {
         CoroutineScope(Dispatchers.IO).launch {
             val dt = DataStoreManager.getValueFlow(SettingsKeys.DOUBLETAP_TO_VIEW, false).first()
-            val ad = DataStoreManager.getValueFlow(SettingsKeys.AUTO_DELETE, false).first()
+            val ad = DataStoreManager.getValueFlow(SettingsKeys.AUTO_DELETE, true).first()
             val cm = DataStoreManager.readColorMap().first()
 
-            _doubleTap.value = dt
-            _autoDelete.value = ad
-            _colorMap.value = cm
+            _doubleTap.update { dt }
+            _autoDelete.update { ad }
+            _colorMap.update { cm }
         }
     }
 

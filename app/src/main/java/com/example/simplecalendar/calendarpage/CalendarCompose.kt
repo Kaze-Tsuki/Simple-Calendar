@@ -20,7 +20,9 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Card
@@ -28,6 +30,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,7 +49,6 @@ import androidx.navigation.NavController
 import com.example.simplecalendar.AlertDialog
 import com.example.simplecalendar.GlobalViewModel
 import com.example.simplecalendar.Task
-import com.example.simplecalendar.settingpage.DataStoreManager
 import com.example.simplecalendar.settingpage.SettingData
 import java.time.LocalDate
 import java.time.YearMonth
@@ -107,10 +110,11 @@ fun CalendarMonth(modifier: Modifier = Modifier, navController: NavController, g
             items(dayInMonth) { day ->
                 val isSelect = globalUIState.selectedDate == LocalDate.of(year, month, day+1)
                 DayCell(day+1, isSelect) {
-                    if (isSelect || !enableDoubleTap)
+                    if (isSelect)
                         navController.navigate("viewDay")
                     else
                         globalViewModel.focusDate(LocalDate.of(year, month, day+1))
+                    if (!enableDoubleTap) navController.navigate("viewDay")
                 }
             }
         }
@@ -173,7 +177,7 @@ fun ViewDay(modifier: Modifier = Modifier, navController: NavController, globalV
         .collectAsState(emptyList())
     LazyColumn {
         item {
-            Text("${calendarUIState.selectedDate}")
+            ViewDayTopBar(calendarUIState.selectedDate, globalViewModel)
         }
         items(tasks) { it
             var deleteConfirm by remember { mutableStateOf(false) }
@@ -267,6 +271,43 @@ fun TaskDisplayCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ViewDayTopBar(date: LocalDate, globalViewModel: GlobalViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 左箭頭
+        IconButton(onClick = {
+            globalViewModel.focusDate(date.plusDays(-1))
+        }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                contentDescription = "Previous day"
+            )
+        }
+
+        // 日期文字
+        Text(
+            text = date.toString(),
+            fontSize = 18.sp,
+        )
+
+        // 右箭頭
+        IconButton(onClick = {
+            globalViewModel.focusDate(date.plusDays(1))
+        }) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Default.ArrowForward,
+                contentDescription = "Next day"
+            )
         }
     }
 }

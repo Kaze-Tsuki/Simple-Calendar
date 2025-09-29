@@ -1,6 +1,7 @@
 package com.example.simplecalendar
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,7 +17,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,9 +34,15 @@ import com.example.simplecalendar.calendarpage.CalendarMonth
 import com.example.simplecalendar.calendarpage.ViewDay
 import com.example.simplecalendar.settingpage.DataStoreManager
 import com.example.simplecalendar.settingpage.Setting
+import com.example.simplecalendar.settingpage.SettingData
 import com.example.simplecalendar.settingpage.dataStore
 import com.example.simplecalendar.taskinput.TaskInputPage
 import com.example.simplecalendar.ui.theme.SimpleCalendarTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 
 sealed class Screens(val route: String) {
@@ -80,7 +87,11 @@ fun App(modifier: Modifier = Modifier) {
         factory = GlobalViewModelFactory(taskDao)
     )
 
-    val globalUIState by globalViewModel.globalState.collectAsState()
+    LaunchedEffect(Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            maybeDeleteExpiredTasks(taskDao)
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -158,3 +169,13 @@ fun BottomBar(navController: NavController, modifier: Modifier = Modifier) {
         }
     }
 }
+
+suspend fun maybeDeleteExpiredTasks(taskDao: TaskDao) {
+    val autoDelete = SettingData.autoDelete.first() // suspend，等 DataStore 初始化完成
+    Log.d("Delete exp", "maybeDeleteExpiredTasks: executed $autoDelete")
+    if (autoDelete) {
+        val today = LocalDate.now().toString()
+        taskDao.deleteExpired(today)
+    }
+}
+
